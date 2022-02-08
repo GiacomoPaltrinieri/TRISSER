@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.io.IOException;
+import java.util.ListIterator;
 
 public class prova {
 
@@ -57,24 +58,27 @@ public class prova {
 
         return sb.toString();
     }
-/** This function generates credentials for the bot to log into Mosquitto **/
-    private static void generateCredentials(String email) {
+/** This function generates credentials for bots to log into Mosquitto **/
+    private static void generateCredentials(ArrayList<String> users) {
         String separator = System.getProperty("file.separator");
-        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwdfile.txt";
-        Path path = Paths.get(absolutePath);
+        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwfile.txt";
 
-        File file = new File(absolutePath);
-        if (!file.exists()) {
-            try {
-                file.createNewFile(); // generates a new file, in case it's not present
-            } catch (IOException e) {
-                e.printStackTrace();
+        ListIterator<String> iterator = users.listIterator();
+        while (iterator.hasNext()) {
+            String email = iterator.next();
+            File file = new File(absolutePath);
+            if (!file.exists()) {
+                try {
+                    file.createNewFile(); // generates a new file, in case it's not present
+                    System.out.println("creating file");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-
-            try {
+            try{
                 String pwd = generateRandomPassword(8);
-                FileWriter fw = new FileWriter(file.getAbsoluteFile());
-                fw.write(email + ":" + pwd);
+                FileWriter fw = new FileWriter(file.getAbsoluteFile(), true);
+                fw.write(email + ":" + pwd + "\n");
                 fw.flush();
                 fw.close();
             } catch (IOException e) {
@@ -82,12 +86,19 @@ public class prova {
             }
         }
     }
+/** This method sets ACL's for every user (topic restriction) **/
+    private static void setACLS() {
+    }
+
 /** Main method **/
     public static void main(String[] args) {
-        generateCredentials("giaco.paltri@gmail.com");
-        generateCredentials("giaco2.paltri@gmail.com");
+        ArrayList<String> userList = new ArrayList<String>();
+        userList.add("giaco.paltri@gmail.com");
+        userList.add("giaco1.paltri@gmail.com");
+        generateCredentials(userList);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
     }
+
 
 }
