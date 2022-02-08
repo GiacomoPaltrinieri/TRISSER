@@ -1,9 +1,12 @@
 package org.lauchproject;
 
 
-import java.io.BufferedReader;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class prova {
 
@@ -35,11 +38,56 @@ public class prova {
         }
         return result.toString();
     }
+/** This function generates a random password of a specified length**/
+    public static String generateRandomPassword(int len) {
+        // ASCII range – alphanumeric (0-9, a-z, A-Z)
+        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+
+        // each iteration of the loop randomly chooses a character from the given
+        // ASCII range and appends it to the `StringBuilder` instance
+
+        for (int i = 0; i < len; i++)
+        {
+            int randomIndex = random.nextInt(chars.length());
+            sb.append(chars.charAt(randomIndex));
+        }
+
+        return sb.toString();
+    }
+/** This function generates credentials for the bot to log into Mosquitto **/
+    private static void generateCredentials(String email) {
+        String separator = System.getProperty("file.separator");
+        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwdfile.txt";
+        Path path = Paths.get(absolutePath);
+
+        File file = new File(absolutePath);
+        if (!file.exists()) {
+            try {
+                file.createNewFile(); // generates a new file, in case it's not present
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                String pwd = generateRandomPassword(8);
+                FileWriter fw = new FileWriter(file.getAbsoluteFile());
+                fw.write(email + ":" + pwd);
+                fw.flush();
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+/** Main method **/
     public static void main(String[] args) {
-
+        generateCredentials("giaco.paltri@gmail.com");
+        generateCredentials("giaco2.paltri@gmail.com");
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
-        new MQTTPubPrint(); // Sends some MQTT messages to the broker
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
     }
+
 }
