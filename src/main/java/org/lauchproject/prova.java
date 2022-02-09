@@ -2,8 +2,6 @@ package org.lauchproject;
 
 
 import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.io.IOException;
@@ -62,39 +60,57 @@ public class prova {
     private static void generateCredentials(ArrayList<String> users) {
         String separator = System.getProperty("file.separator");
         String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwfile.txt";
-
         ListIterator<String> iterator = users.listIterator();
-        while (iterator.hasNext()) {
-            String email = iterator.next();
-            File file = new File(absolutePath);
-            if (!file.exists()) {
-                try {
-                    file.createNewFile(); // generates a new file, in case it's not present
-                    System.out.println("creating file");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            try{
-                String pwd = generateRandomPassword(8);
-                FileWriter fw = new FileWriter(file.getAbsoluteFile(), true);
-                fw.write(email + ":" + pwd + "\n");
-                fw.flush();
-                fw.close();
+        for (int i = 0; i < users.size(); i++){
+            String pwd = generateRandomPassword(8);
+            users.set(i, users.get(i)+":"+pwd);
+        }
+        writeToFile(absolutePath,users);
+    }
+/** This function writes on a file which path has to be specified (including file name) in absolutePath (note that you have to use a separator, or 2 \\ -> not C:\...\file.txt BUT C:\\...\\file.txt). every line that has to be written has to be placed in an Arraylist element (lines)**/
+    public static void writeToFile(String absolutePath, ArrayList<String> lines) {
+        File file = new File(absolutePath); // Creates File object with the specified path. The path must include the filename
+        if (!file.exists()) {
+            try {
+                file.createNewFile(); // generates a new file, in case it's not present
+                System.out.println("creating file");
             } catch (IOException e) {
                 e.printStackTrace();
+                System.out.println("something went wrong while creating the file");
             }
+        }
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(file.getAbsoluteFile());
+        } catch (IOException e) {
+            System.out.println("something went wrong while starting the FileWriter");
+        }
+
+        ListIterator<String> line = lines.listIterator();
+        while (line.hasNext()) {
+            try {
+                fw.write(line.next() + "\n"); // writes single line
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("something went wrong while writing on the file");
+            }
+        }
+        try {
+            fw.flush();
+            fw.close(); // closes the FileWriter
+        } catch (IOException e) {
+            System.out.println("something went wrong while closing the file");
         }
     }
 /** This method sets ACL's for every user (topic restriction) **/
-    private static void setACLS() {
-    }
+    private static void setACLS() {}
 
 /** Main method **/
     public static void main(String[] args) {
         ArrayList<String> userList = new ArrayList<String>();
         userList.add("giaco.paltri@gmail.com");
         userList.add("giaco1.paltri@gmail.com");
+        userList.add("giaco65.paltri@gmail.com");
         generateCredentials(userList);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
