@@ -63,7 +63,7 @@ public class prova {
         String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwfile.txt";
         for (int i = 0; i < users.size(); i++){
             String pwd = generateRandomPassword(8);
-            SendMail.send(users.get(i),"prova", users.get(i)+":"+pwd);
+            //SendMail.send(users.get(i),"prova", users.get(i)+":"+pwd);
             users.set(i, users.get(i)+":"+pwd);
         }
         writeToFile(absolutePath,users);
@@ -104,13 +104,40 @@ public class prova {
         }
     }
 /** This method sets ACL's for every user (topic restriction) **/
-    private static void setACLs() {}
+    private static ArrayList<String> setACLs(ArrayList<String> users, int game_number) {
+        ArrayList<String> topics = new ArrayList<String>();
+        for (int i = 0; i < users.size() - 1; i++)
+            for (int j = 0; j < users.size(); j++)
+                if (!users.get(i).equals(users.get(j)))
+                    topics.add(users.get(i) + "_" + users.get(j) + "/");
+
+        for (int i = 0; i < users.size(); i++)
+            System.out.println(topics.get(i));
+
+        if (game_number % users.size() == 0){ // the number of games can be divided equally between the bots
+            for (int i = 0; i < users.size(); i++)
+                for (int j=0; j < game_number/4; j++)
+                    if (j == game_number/4 - 1)
+                        topics.set(i, topics.get(i) + j + ";");
+                    else
+                        topics.set(i, topics.get(i) + j + ",");
+
+            for (int i = 0; i < users.size(); i++)
+                System.out.println(topics.get(i));
+            return topics;
+        }
+        else
+            System.out.println("An error occurred, the room number you chose isn't valid");
+
+    }
 
 /** Main method **/
     public static void main(String[] args) {
         ArrayList<String> userList = new ArrayList<String>();
         userList.add("TRISSER.server@gmail.com");
-        //userList.add("abdullah.ali@einaudicorreggio.it"); // list of users
+        userList.add("giaco.paltri@gmail.com");             // list of users
+        userList.add("abdullah.ali@einaudicorreggio.it");
+        ArrayList<String> topics = setACLs(userList,150);
         generateCredentials(userList);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
         //new MQTTPubPrint(); // test send message
