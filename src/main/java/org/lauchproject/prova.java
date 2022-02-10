@@ -1,5 +1,7 @@
 package org.lauchproject;
 
+import org.json.simple.JSONObject;
+
 import java.io.*;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -57,16 +59,20 @@ public class prova {
 
         return sb.toString();
     }
-/** This function generates credentials for bots to log into Mosquitto **/
-    private static void generateCredentials(ArrayList<String> users) {
+/** This function generates a password for bots to log into Mosquitto **/
+    private static ArrayList<String> setPassword(ArrayList<String> users) {
+        ArrayList<String> users_pwd = new ArrayList<>();
+        ArrayList<String> pwds = new ArrayList<>();
         String separator = System.getProperty("file.separator");
         String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwfile.txt";
-        for (int i = 0; i < users.size(); i++){
+        for (String user : users) {
             String pwd = generateRandomPassword(8);
-            //SendMail.send(users.get(i),"prova", users.get(i)+":"+pwd);
-            users.set(i, users.get(i)+":"+pwd);
+
+            users_pwd.add(user + ":" + pwd);
+            pwds.add(pwd);
         }
-        writeToFile(absolutePath,users);
+        writeToFile(absolutePath,users_pwd);
+        return pwds;
     }
 /** This function writes on a file which path has to be specified (including file name) in absolutePath (note that you have to use a separator, or 2 \\ -> NOT C:\...\file.txt BUT C:\\...\\file.txt). every line that has to be written has to be placed in an Arraylist element (lines)**/
     public static void writeToFile(String absolutePath, ArrayList<String> lines) {
@@ -105,19 +111,35 @@ public class prova {
     }
 /** This method sets ACL's for every user (topic restriction) **/
     private static ArrayList<String> setACLs(ArrayList<String> users, int game_number) {
-        ArrayList<String> topics = new ArrayList<String>();
+        boolean existing_topic = false;
+        ArrayList<String> topics = new ArrayList<>();
         for (int i = 0; i < users.size() - 1; i++)
-            for (int j = 0; j < users.size(); j++)
-                if (!users.get(i).equals(users.get(j)))
-                    topics.add(users.get(i) + "_" + users.get(j) + "/");
-
-        for (int i = 0; i < users.size(); i++)
-            System.out.println(topics.get(i));
+        {
+            for (String user : users) {
+                if (!users.get(i).equals(user)) // the 2 users can't be equal
+                {
+                    if (topics.size() != 0) // only if it's not the first topic
+                    {
+                        for (String topic : topics) {
+                            if (topic.contains(users.get(i)) && topic.contains(user)) {
+                                existing_topic = true;
+                                break;
+                            }
+                        }
+                        if (!existing_topic)
+                            topics.add(users.get(i) + "_" + user + "/");
+                        existing_topic = false;
+                    } else
+                        topics.add(users.get(i) + "_" + user + "/");
+                }
+            }
+        }
+        for (String topic : topics) System.out.println(topic);
 
         if (game_number % users.size() == 0){ // the number of games can be divided equally between the bots
-            for (int i = 0; i < users.size(); i++)
-                for (int j=0; j < game_number/4; j++)
-                    if (j == game_number/4 - 1)
+            for (int i = 0; i < topics.size(); i++)
+                for (int j=0; j < game_number/users.size(); j++)
+                    if (j == game_number/users.size() - 1)
                         topics.set(i, topics.get(i) + j + ";");
                     else
                         topics.set(i, topics.get(i) + j + ",");
@@ -128,19 +150,53 @@ public class prova {
         }
         else
             System.out.println("An error occurred, the room number you chose isn't valid");
-
+        return null;
+    }
+/** This function creates the string message that will be sent to every bot **/
+    private static void generateMailContent(ArrayList<String> users, ArrayList<String> topics, ArrayList<String> pwds, JSONObject rules) {
+        ArrayList<String> mails = new ArrayList<>();
+        JSONObject singleMail = new JSONObject();
+        for (int i = 0; i < users.size(); i++){
+            singleMail.put("user", users.get(i));
+            singleMail.put("pwd", pwds.get(i));
+            singleMail.put("rules", rules);
+            singleMail.put("topics", getTopicAccess(topics, users.get(i)));
+            mails.add(singleMail.toString());
+            SendMail.send(users.get(i), "GAME", mails.get(i));
+            singleMail.clear();
+        }
+        System.out.println(mails);
+    }
+/** This function returns the topics that a user has access to **/
+    private static String getTopicAccess(ArrayList<String> topics, String user) {
+        String permittedTopics = "";
+        for (String topic : topics)
+            if (topic.contains(user))
+                permittedTopics = permittedTopics + topic;
+        return permittedTopics;
     }
 
-/** Main method **/
+    /** Main method **/
     public static void main(String[] args) {
-        ArrayList<String> userList = new ArrayList<String>();
-        userList.add("TRISSER.server@gmail.com");
-        userList.add("giaco.paltri@gmail.com");             // list of users
-        userList.add("abdullah.ali@einaudicorreggio.it");
-        ArrayList<String> topics = setACLs(userList,150);
-        generateCredentials(userList);
+        ArrayList<String> users = new ArrayList<>();
+        JSONObject rules = new JSONObject();
+        rules.put("time", 20);
+        rules.put("bot_number", 150);
+        rules.put("connection_time", 20);
+        rules.put("date", "22/08/2002");
+        rules.put("start_time", "15:30");
+
+        users.add("TRISSER.server@gmail.com");
+        users.add("giaco.paltri@gmail.com");             // list of users
+        users.add("abdullah.ali@einaudicorreggio.it");
+
+        ArrayList<String> topics = setACLs(users,150);
+        ArrayList<String> pwds = setPassword(users);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
         //new MQTTPubPrint(); // test send message
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
+        generateMailContent(users, topics, pwds, rules);
     }
+
+
 }
