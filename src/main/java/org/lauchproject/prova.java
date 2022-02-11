@@ -64,8 +64,9 @@ public class prova {
     private static ArrayList<String> setPassword(ArrayList<String> users) {
         ArrayList<String> users_pwd = new ArrayList<>();
         ArrayList<String> pwds = new ArrayList<>();
+        String file_name = "pwfile.txt";
         String separator = System.getProperty("file.separator");
-        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "pwfile.txt";
+        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + file_name;
         for (String user : users) {
             String pwd = generateRandomPassword(8);
 
@@ -73,6 +74,7 @@ public class prova {
             pwds.add(pwd);
         }
         writeToFile(absolutePath,users_pwd);
+        executeCommand("cd " + absolutePath.replace(file_name, "") + " && mosquitto_passwd -U pwfile.txt"); // hashes the password file
         return pwds;
     }
 /** This function writes on a file which path has to be specified (including file name) in absolutePath (note that you have to use a separator, or 2 \\ -> NOT C:\...\file.txt BUT C:\\...\\file.txt). every line that has to be written has to be placed in an Arraylist element (lines)**/
@@ -156,10 +158,32 @@ public class prova {
 
 
             mails.add(singleMail.toString().replace("\\",""));
-            SendMail.send(users.get(i), "GAME", mails.get(i));
+
+            writeACLS(users, topics, subRoomList);
+
+            //SendMail.send(users.get(i), "GAME", mails.get(i));
             singleMail.clear();
         }
         System.out.println(mails);
+    }
+/** This function writes the ACLS for every user on the config file **/
+    private static void writeACLS(ArrayList<String> users, ArrayList<String> topics, JSONArray subRoomList) {
+        JSONArray accessedTopics;
+        String separator = System.getProperty("file.separator");
+        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "aclfile.txt";
+        ArrayList<String> toWrite = new ArrayList<>();
+        toWrite.add("# This affects access control for clients with no username.");
+        toWrite.add("topic read $SYS/#");
+        for (String user:users){ // for every user
+            toWrite.add("user " + user);
+            accessedTopics = getTopicAccess(topics,user);
+            for (int i = 0; i < accessedTopics.size(); i++){
+                for (int j = 0; j < subRoomList.size(); j++)
+                toWrite.add("topic " + accessedTopics.get(i) + "/" + j);
+            }
+        }
+
+        writeToFile(absolutePath, toWrite);
     }
 
     private static JSONArray subRoomGenerator(int size, int bot_instances) {
@@ -191,8 +215,6 @@ public class prova {
         users.add("TRISSER.server@gmail.com");
         users.add("giaco.paltri@gmail.com");             // list of users
         users.add("abdullah.ali@einaudicorreggio.it");
-
-
 
         ArrayList<String> topics = setACLs(users);
         ArrayList<String> pwds = setPassword(users);
