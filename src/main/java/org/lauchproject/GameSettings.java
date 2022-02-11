@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.util.ListIterator;
 
-public class prova {
-
+public class GameSettings {
 /** This method takes a String containing one or more commands (command -> to use more commands, just insert command1 && command2...) to execute in the CMD, the result String you get in return is the output of the command you would see on the CMD**/
     public static String executeCommand(String command) {
         String line;
@@ -145,7 +144,7 @@ public class prova {
     private static void generateMailContent(ArrayList<String> users, ArrayList<String> topics, ArrayList<String> pwds, JSONObject rules, int bot_instances) {
         ArrayList<String> mails = new ArrayList<>();
         JSONArray roomList;
-        JSONArray subRoomList;
+        int subRoomList = subRoomGenerator(users.size(), bot_instances);
         JSONObject singleMail = new JSONObject();
         for (int i = 0; i < users.size(); i++){
             singleMail.put("user", users.get(i));
@@ -153,8 +152,9 @@ public class prova {
             singleMail.put("rules", rules);
             roomList = getTopicAccess(topics, users.get(i));
             singleMail.put("rooms", roomList);
-            subRoomList = subRoomGenerator(users.size(), bot_instances);
-            singleMail.put("room_instances", subRoomList);
+            singleMail.put("room_instance", subRoomList);
+//            subRoomList = subRoomGenerator(users.size(), bot_instances);
+//            singleMail.put("room_instance", subRoomList);
 
 
             mails.add(singleMail.toString().replace("\\",""));
@@ -167,7 +167,7 @@ public class prova {
         System.out.println(mails);
     }
 /** This function writes the ACLS for every user on the config file **/
-    private static void writeACLS(ArrayList<String> users, ArrayList<String> topics, JSONArray subRoomList) {
+    private static void writeACLS(ArrayList<String> users, ArrayList<String> topics, int subRoomList) {
         JSONArray accessedTopics;
         String separator = System.getProperty("file.separator");
         String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "aclfile.txt";
@@ -178,7 +178,7 @@ public class prova {
             toWrite.add("user " + user);
             accessedTopics = getTopicAccess(topics,user);
             for (int i = 0; i < accessedTopics.size(); i++){
-                for (int j = 0; j < subRoomList.size(); j++)
+                for (int j = 0; j < subRoomList; j++)
                 toWrite.add("topic " + accessedTopics.get(i) + "/" + j);
             }
         }
@@ -186,14 +186,19 @@ public class prova {
         writeToFile(absolutePath, toWrite);
     }
 
-    private static JSONArray subRoomGenerator(int size, int bot_instances) {
-        JSONArray subRoomList = new JSONArray();
-        for (int i = 0; i < bot_instances/size; i++)
-            subRoomList.add(i);
-        return subRoomList;
+    private static int subRoomGenerator(int size, int bot_instances) {
+        return bot_instances/size;
     }
 
-    /** This function returns the topics that a user has access to **/
+    /**FUNCTION TEMPORARILY DEPRECATED**/
+///** This function returns the set of subroom accessible to every player [1,2,3,4,5,6,7,8,9...] **/
+//    private static JSONArray subRoomGenerator(int size, int bot_instances) {
+//        JSONArray subRoomList = new JSONArray();
+//        for (int i = 0; i < bot_instances/size; i++)
+//            subRoomList.add(i);
+//        return subRoomList;
+//    }
+/** This function returns the topics that a user has access to **/
     private static JSONArray getTopicAccess(ArrayList<String> topics, String user) {
         JSONArray permittedTopics = new JSONArray();
         for (String topic : topics)
@@ -209,8 +214,7 @@ public class prova {
         rules.put("time", 20);
         rules.put("bot_number", 150);
         rules.put("connection_time", 20);
-        rules.put("date", "22/08/2002");
-        rules.put("start_time", "15:30");
+        rules.put("date", "22/08/2002 15:30");
 
         users.add("TRISSER.server@gmail.com");
         users.add("giaco.paltri@gmail.com");             // list of users
