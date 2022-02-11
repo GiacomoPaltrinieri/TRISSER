@@ -1,5 +1,6 @@
 package org.lauchproject;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.*;
@@ -110,9 +111,9 @@ public class prova {
         }
     }
 /** This method sets ACL's for every user (topic restriction) **/
-    private static ArrayList<String> setACLs(ArrayList<String> users, int game_number) {
+    private static ArrayList<String> setACLs(ArrayList<String> users) {
         boolean existing_topic = false;
-        ArrayList<String> topics = new ArrayList<>();
+        JSONArray topics = new JSONArray();
         for (int i = 0; i < users.size() - 1; i++)
         {
             for (String user : users) {
@@ -120,59 +121,60 @@ public class prova {
                 {
                     if (topics.size() != 0) // only if it's not the first topic
                     {
-                        for (String topic : topics) {
-                            if (topic.contains(users.get(i)) && topic.contains(user)) {
+                        for (int j = 0; j < topics.size(); j++) {
+                            if (topics.get(j).toString().contains(users.get(i)) && topics.get(j).toString().contains(user)) {//contains()
                                 existing_topic = true;
                                 break;
                             }
                         }
                         if (!existing_topic)
-                            topics.add(users.get(i) + "_" + user + "/");
+                            topics.add(users.get(i) + "_" + user);
                         existing_topic = false;
                     } else
-                        topics.add(users.get(i) + "_" + user + "/");
+                        topics.add(users.get(i) + "_" + user);
                 }
             }
         }
-        for (String topic : topics) System.out.println(topic);
-
-        if (game_number % users.size() == 0){ // the number of games can be divided equally between the bots
-            for (int i = 0; i < topics.size(); i++)
-                for (int j=0; j < game_number/users.size(); j++)
-                    if (j == game_number/users.size() - 1)
-                        topics.set(i, topics.get(i) + j + ";");
-                    else
-                        topics.set(i, topics.get(i) + j + ",");
-
-            for (int i = 0; i < users.size(); i++)
-                System.out.println(topics.get(i));
-            return topics;
-        }
-        else
-            System.out.println("An error occurred, the room number you chose isn't valid");
-        return null;
+        //for (String topic : topics) System.out.println(topic);
+        System.out.println("CIAOOOO" + topics.toString());
+        return topics;
     }
 /** This function creates the string message that will be sent to every bot **/
-    private static void generateMailContent(ArrayList<String> users, ArrayList<String> topics, ArrayList<String> pwds, JSONObject rules) {
+    private static void generateMailContent(ArrayList<String> users, ArrayList<String> topics, ArrayList<String> pwds, JSONObject rules, int bot_instances) {
         ArrayList<String> mails = new ArrayList<>();
+        JSONArray roomList;
+        JSONArray subRoomList;
         JSONObject singleMail = new JSONObject();
         for (int i = 0; i < users.size(); i++){
             singleMail.put("user", users.get(i));
             singleMail.put("pwd", pwds.get(i));
             singleMail.put("rules", rules);
-            singleMail.put("topics", getTopicAccess(topics, users.get(i)));
-            mails.add(singleMail.toString());
+            roomList = getTopicAccess(topics, users.get(i));
+            singleMail.put("rooms", roomList);
+            subRoomList = subRoomGenerator(users.size(), bot_instances);
+            singleMail.put("room_instances", subRoomList);
+
+
+            mails.add(singleMail.toString().replace("\\",""));
             SendMail.send(users.get(i), "GAME", mails.get(i));
             singleMail.clear();
         }
         System.out.println(mails);
     }
-/** This function returns the topics that a user has access to **/
-    private static String getTopicAccess(ArrayList<String> topics, String user) {
-        String permittedTopics = "";
+
+    private static JSONArray subRoomGenerator(int size, int bot_instances) {
+        JSONArray subRoomList = new JSONArray();
+        for (int i = 0; i < bot_instances/size; i++)
+            subRoomList.add(i);
+        return subRoomList;
+    }
+
+    /** This function returns the topics that a user has access to **/
+    private static JSONArray getTopicAccess(ArrayList<String> topics, String user) {
+        JSONArray permittedTopics = new JSONArray();
         for (String topic : topics)
             if (topic.contains(user))
-                permittedTopics = permittedTopics + topic;
+                permittedTopics.add(topic);
         return permittedTopics;
     }
 
@@ -190,13 +192,13 @@ public class prova {
         users.add("giaco.paltri@gmail.com");             // list of users
         users.add("abdullah.ali@einaudicorreggio.it");
 
-        ArrayList<String> topics = setACLs(users,150);
+
+
+        ArrayList<String> topics = setACLs(users);
         ArrayList<String> pwds = setPassword(users);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
         //new MQTTPubPrint(); // test send message
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
-        generateMailContent(users, topics, pwds, rules);
+        generateMailContent(users, topics, pwds, rules, 150);
     }
-
-
 }
