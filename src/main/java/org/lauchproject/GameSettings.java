@@ -65,20 +65,20 @@ public class GameSettings {
         ArrayList<String> pwds = new ArrayList<>();
         String file_name = "pwfile.txt";
         String separator = System.getProperty("file.separator");
-        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + file_name;
+        String path = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + file_name;
         for (String user : users) {
             String pwd = generateRandomPassword(8);
 
             users_pwd.add(user + ":" + pwd);
             pwds.add(pwd);
         }
-        writeToFile(absolutePath,users_pwd);
-        executeCommand("cd " + absolutePath.replace(file_name, "") + " && mosquitto_passwd -U pwfile.txt"); // hashes the password file
+        writeToFile(path,users_pwd);
+        executeCommand("cd " + path.replace(file_name, "") + " && mosquitto_passwd -U pwfile.txt"); // hashes the password file
         return pwds;
     }
-/** This function writes on a file which path has to be specified (including file name) in absolutePath (note that you have to use a separator, or 2 \\ -> NOT C:\...\file.txt BUT C:\\...\\file.txt). every line that has to be written has to be placed in an Arraylist element (lines)**/
-    public static void writeToFile(String absolutePath, ArrayList<String> lines) {
-        File file = new File(absolutePath); // Creates File object with the specified path. The path must include the filename
+/** This function writes on a file which path has to be specified (including file name) in path (note that you have to use a separator, or 2 \\ -> NOT C:\...\file.txt BUT C:\\...\\file.txt). every line that has to be written has to be placed in an Arraylist element (lines)**/
+    public static void writeToFile(String path, ArrayList<String> lines) {
+        File file = new File(path); // Creates File object with the specified path. The path must include the filename
         if (!file.exists()) {
             try {
                 file.createNewFile(); // generates a new file, in case it's not present
@@ -161,7 +161,7 @@ public class GameSettings {
 
             writeACLS(users, topics, subRoomList);
 
-            //SendMail.send(users.get(i), "GAME", mails.get(i));
+            SendMail.send(users.get(i), "GAME", mails.get(i));
             singleMail.clear();
         }
         System.out.println(mails);
@@ -170,7 +170,7 @@ public class GameSettings {
     private static void writeACLS(ArrayList<String> users, ArrayList<String> topics, int subRoomList) {
         JSONArray accessedTopics;
         String separator = System.getProperty("file.separator");
-        String absolutePath = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "aclfile.txt";
+        String path = "C:" + separator + "Program Files" + separator + "mosquitto" + separator + "aclfile.txt";
         ArrayList<String> toWrite = new ArrayList<>();
         toWrite.add("# This affects access control for clients with no username.");
         toWrite.add("topic read $SYS/#");
@@ -183,7 +183,7 @@ public class GameSettings {
             }
         }
 
-        writeToFile(absolutePath, toWrite);
+        writeToFile(path, toWrite);
     }
 
     private static int subRoomGenerator(int size, int bot_instances) {
@@ -214,7 +214,7 @@ public class GameSettings {
         rules.put("time", 20);
         rules.put("bot_number", 150);
         rules.put("connection_time", 20);
-        rules.put("date", "22/08/2002 15:30");
+        rules.put("date", "22-08-2002 15:30:22");
 
         users.add("TRISSER.server@gmail.com");
         users.add("giaco.paltri@gmail.com");             // list of users
@@ -223,8 +223,15 @@ public class GameSettings {
         ArrayList<String> topics = setACLs(users);
         ArrayList<String> pwds = setPassword(users);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
-        //new MQTTPubPrint(); // test send message
+        new MQTTPubPrint(); // test send message
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
         generateMailContent(users, topics, pwds, rules, 150);
+
+        String separator = System.getProperty("file.separator");
+        String path = ".." + separator + "time.txt";
+        ArrayList<String> ruleLine = new ArrayList<>();
+        ruleLine.add((String) rules.get("date"));
+
+        writeToFile(path, ruleLine);
     }
 }
