@@ -206,20 +206,8 @@ public class GameSettings {
                 permittedTopics.add(topic);
         return permittedTopics;
     }
-
-    /** Main method **/
-    public static void main(String[] args) {
-        ArrayList<String> users = new ArrayList<>();
-        JSONObject rules = new JSONObject();
-        rules.put("time", 20);
-        rules.put("bot_number", 150);
-        rules.put("connection_time", 20);
-        rules.put("date", "22-08-2002 15:30:22");
-
-        users.add("TRISSER.server@gmail.com");
-        users.add("giaco.paltri@gmail.com");             // list of users
-        users.add("abdullah.ali@einaudicorreggio.it");
-
+    /** Constructor that will be called by the my_servlet method**/
+    public GameSettings(JSONObject rules, ArrayList<String> users) {
         ArrayList<String> topics = setACLs(users);
         ArrayList<String> pwds = setPassword(users);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
@@ -227,6 +215,7 @@ public class GameSettings {
         System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
         generateMailContent(users, topics, pwds, rules, 150);
 
+        // writes to file the game and time of the game
         String separator = System.getProperty("file.separator");
         String path = ".." + separator + "time.txt";
         ArrayList<String> ruleLine = new ArrayList<>();
@@ -234,4 +223,33 @@ public class GameSettings {
 
         writeToFile(path, ruleLine);
     }
+
+    /** Main method **/
+//    public static void main(String[] args) {
+//        ArrayList<String> users = new ArrayList<>();
+//        JSONObject rules = new JSONObject();
+//        rules.put("time", 20);
+//        rules.put("bot_number", 150);
+//        rules.put("connection_time", 20);
+//        rules.put("date", "2002-08-22 15:30:22");
+//
+//        users.add("TRISSER.server@gmail.com");
+//        users.add("giaco.paltri@gmail.com");             // list of users
+//        users.add("abdullah.ali@einaudicorreggio.it");
+//
+//        ArrayList<String> topics = setACLs(users);
+//        ArrayList<String> pwds = setPassword(users);
+//        System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
+//        new MQTTPubPrint(); // test send message
+//        System.out.println(executeCommand("Taskkill /IM \"mosquitto.exe\" /F")); // Closes the mosquitto broker
+//        generateMailContent(users, topics, pwds, rules, 150);
+//
+//        // writes to file the game and time of the game
+//        String separator = System.getProperty("file.separator");
+//        String path = ".." + separator + "time.txt";
+//        ArrayList<String> ruleLine = new ArrayList<>();
+//        ruleLine.add((String) rules.get("date"));
+//
+//        writeToFile(path, ruleLine);
+//    }
 }
