@@ -9,7 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class GamePreparation {
-    static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    static DateFormat df = new SimpleDateFormat("dd-MM-YYYY HH:mm:ss");
 
     static Timer timer = new Timer();
 

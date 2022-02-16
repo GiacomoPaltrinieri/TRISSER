@@ -207,7 +207,7 @@ public class GameSettings {
         return permittedTopics;
     }
     /** Constructor that will be called by the my_servlet method**/
-    public GameSettings(JSONObject rules, ArrayList<String> users) {
+    public GameSettings(JSONObject rules, ArrayList<String> users) { // here are all the informations needed to start a tournament
         ArrayList<String> topics = setACLs(users);
         ArrayList<String> pwds = setPassword(users);
         System.out.println(executeCommand("cd C:\\Program Files\\mosquitto\\ && Net start Mosquitto")); // Starts the mosquitto broker
